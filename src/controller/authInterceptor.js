@@ -4,11 +4,13 @@ const { FHIR, CHT } = require('../../config');
 const {logger} = require("../utils/logger");
 const FHIR_URL = FHIR.url;
 
-const forwardRequestToFhirServer = async (requestBody) => {
+const forwardRequestToFhirServer = async (req) => {
     logger.information("Attempt forwarding request");
+    let requestBody = req?.body || {};
     try {
         const axiosInstance = axios.create({
             baseURL: FHIR.url,
+            method: req.method || 'get',
             headers: {
                 "Content-Type": "application/json",
             },
@@ -33,7 +35,13 @@ const forwardRequestToFhirServer = async (requestBody) => {
         );
         logger.information("Generating FHIR resource");
 
-        const response = await axiosInstance.post(`${FHIR_URL}/`, JSON.stringify(requestBody)); //i.e /ServiceRequest
+        
+        if(['put','post','patch', 'delete'].includes(req.method.toLowerCase())){
+            const response = await axiosInstance.post(`${FHIR_URL}/`, JSON.stringify(requestBody)); //i.e /ServiceRequest
+        } else {
+            const response = await axiosInstance.request(`${FHIR_URL}/`);
+        }
+        
         const location = response.headers.location.split("/");
         logger.information("FHIR server response");
         logger.information(`Response ${location.at(-3)}`);
@@ -47,7 +55,6 @@ const forwardRequestToFhirServer = async (requestBody) => {
         }
     }
 };
-
 
 module.exports = {
     forwardRequestToFhirServer
