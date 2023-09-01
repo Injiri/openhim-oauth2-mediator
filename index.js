@@ -6,7 +6,7 @@ const app = express();
 const {logger} = require('./src/utils/logger');
 const {OPENHIM, CHANNEL_CONFIG_ENDPOINTS_URL} = require("./config");
 const {registerMediator} = require("openhim-mediator-utils");
-const {forwardRequestToFhirServer} = require("src/controller/authInterceptor")
+const {forwardRequestToFhirServer, forwardRequestToFHIR} = require("src/controller/authInterceptor")
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
@@ -24,11 +24,11 @@ app.post('/', (req, res) => {
     res.send('Loaded');
 });
 
-app.post('/fhirResource',
-    async function (req, res) {
-        const {response} = await forwardRequestToFhirServer(req.body);
-        res.send(response);
-    });
+app.all('/fhirResource', async function (req, res) {
+    const {response} = await forwardRequestToFhirServer(req);
+    res.send(response);
+});
+
 const registerMediatorCallback = (err) => {
     if (err) {
         throw new Error(`Mediator Registration Failed: Reason ${err}`);
